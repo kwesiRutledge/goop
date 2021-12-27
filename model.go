@@ -114,9 +114,9 @@ func (m *Model) Optimize(solver solvers.Solver) (*Solution, error) {
 	ubs := make([]float64, len(m.vars))
 	types := new(bytes.Buffer)
 	for i, v := range m.vars {
-		lbs[i] = v.Lower()
-		ubs[i] = v.Upper()
-		types.WriteByte(byte(v.Type()))
+		lbs[i] = v.Lower
+		ubs[i] = v.Upper
+		types.WriteByte(byte(v.Vtype))
 	}
 
 	solver.ShowLog(m.showLog)

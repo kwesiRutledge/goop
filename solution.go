@@ -36,12 +36,12 @@ func newSolution(mipSol solvers.MIPSolution) *Solution {
 
 // Value returns the value assigned to the variable in the solution
 func (s *Solution) Value(v *Var) float64 {
-	return s.vals.Get(int(v.ID()))
+	return s.vals.Get(int(v.ID))
 }
 
 // IsOne returns true if the value assigned to the variable is an integer,
 // and assigned to one. This is a convenience method which should not be
 // super trusted...
 func (s *Solution) IsOne(v *Var) bool {
-	return (v.Type() == Integer || v.Type() == Binary) && s.Value(v) > tinyNum
+	return (v.Vtype == Integer || v.Vtype == Binary) && s.Value(v) > tinyNum
 }
