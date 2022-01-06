@@ -3,7 +3,7 @@ package goop_test
 import (
 	"testing"
 
-	"github.com/mit-drl/goop"
+	"github.com/kwesiRutledge/goop"
 )
 
 func TestDot(t *testing.T) {
