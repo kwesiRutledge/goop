@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mit-drl/goop/solvers"
+	"github.com/kwesiRutledge/goop/solution"
 	"github.com/sirupsen/logrus"
 )
 
@@ -105,7 +105,7 @@ func (m *Model) SetObjective(e Expr, sense ObjSense) {
 
 // Optimize optimizes the model using the given solver type and returns the
 // solution or an error.
-func (m *Model) Optimize(solver solvers.Solver) (*Solution, error) {
+func (m *Model) Optimize(solver Solver) (*solution.Solution, error) {
 	if len(m.vars) == 0 {
 		return nil, errors.New("no variables in model")
 	}
@@ -155,7 +155,7 @@ func (m *Model) Optimize(solver solvers.Solver) (*Solution, error) {
 	}
 
 	mipSol := solver.Optimize()
-	defer solvers.DeleteSolver(solver)
+	defer solver.DeleteSolver()
 
 	if mipSol.GetErrorCode() != 0 {
 		msg := fmt.Sprintf(
