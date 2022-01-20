@@ -16,3 +16,6 @@
 # Project specific
 vendor/*/
 .third_party/
+
+# Log files
+*.log
