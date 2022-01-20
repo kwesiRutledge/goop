@@ -1,12 +1,10 @@
 package goop
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/kwesiRutledge/goop/solution"
 	"github.com/sirupsen/logrus"
 )
 
@@ -105,19 +103,19 @@ func (m *Model) SetObjective(e Expr, sense ObjSense) {
 
 // Optimize optimizes the model using the given solver type and returns the
 // solution or an error.
-func (m *Model) Optimize(solver Solver) (*solution.Solution, error) {
+func (m *Model) Optimize(solver Solver) (*Solution, error) {
 	if len(m.vars) == 0 {
 		return nil, errors.New("no variables in model")
 	}
 
-	lbs := make([]float64, len(m.vars))
-	ubs := make([]float64, len(m.vars))
-	types := new(bytes.Buffer)
-	for i, v := range m.vars {
-		lbs[i] = v.Lower
-		ubs[i] = v.Upper
-		types.WriteByte(byte(v.Vtype))
-	}
+	// lbs := make([]float64, len(m.vars))
+	// ubs := make([]float64, len(m.vars))
+	// types := new(bytes.Buffer)
+	// for i, v := range m.vars {
+	// 	lbs[i] = v.Lower
+	// 	ubs[i] = v.Upper
+	// 	types.WriteByte(byte(v.Vtype))
+	// }
 
 	solver.ShowLog(m.showLog)
 
@@ -125,7 +123,7 @@ func (m *Model) Optimize(solver Solver) (*solution.Solution, error) {
 		solver.SetTimeLimit(m.timeLimit.Seconds())
 	}
 
-	solver.AddVars(len(m.vars), &lbs[0], &ubs[0], types.String())
+	solver.AddVars(m.vars)
 
 	for _, constr := range m.constrs {
 		solver.AddConstr(

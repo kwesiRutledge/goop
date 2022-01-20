@@ -1,9 +1,5 @@
 package goop
 
-import (
-	"github.com/mit-drl/goop/solvers"
-)
-
 const (
 	tinyNum float64 = 0.01
 )
@@ -11,7 +7,7 @@ const (
 // Solution stores the solution of an optimization problem and associated
 // metatdata
 type Solution struct {
-	vals solvers.DoubleVector
+	vals []float64
 
 	// The objective for the solution
 	Objective float64
@@ -25,18 +21,18 @@ type Solution struct {
 	Gap float64
 }
 
-func newSolution(mipSol solvers.MIPSolution) *Solution {
-	return &Solution{
-		vals:      mipSol.GetValues(),
-		Objective: mipSol.GetObj(),
-		Optimal:   mipSol.GetOptimal(),
-		Gap:       mipSol.GetGap(),
-	}
-}
+// func newSolution(mipSol solvers.MIPSolution) *Solution {
+// 	return &Solution{
+// 		vals:      mipSol.GetValues(),
+// 		Objective: mipSol.GetObj(),
+// 		Optimal:   mipSol.GetOptimal(),
+// 		Gap:       mipSol.GetGap(),
+// 	}
+// }
 
 // Value returns the value assigned to the variable in the solution
 func (s *Solution) Value(v *Var) float64 {
-	return s.vals.Get(int(v.ID))
+	return s.vals[v.ID]
 }
 
 // IsOne returns true if the value assigned to the variable is an integer,
