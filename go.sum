@@ -1,6 +1,8 @@
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/hashicorp/go-version v1.4.0 h1:aAQzgqIrRKRa7w75CKpbBxYsmUoPjzVm1W59ca1L0J4=
+github.com/hashicorp/go-version v1.4.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/kwesiRutledge/gurobi.go v0.0.0-20220103232452-e3826c6fadd9 h1:waJowiyssY/L5q96CZyxRxJoCz2rp59Ereb4s5dWb/s=
 github.com/kwesiRutledge/gurobi.go v0.0.0-20220103232452-e3826c6fadd9/go.mod h1:PLagszho/FEue9tgsz3F4iCYiMnQkOs8LHcdl4btj4c=
 github.com/kwesiRutledge/gurobi.go v0.0.0-20220110230340-8158b1de71de h1:xH/LsACGdxjeXusa2MvizWCUnlIVMmpe4fLeg09ShQI=

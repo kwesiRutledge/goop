@@ -11,22 +11,16 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
+
+	versionTool "github.com/hashicorp/go-version"
 )
 
 // Type Definitions
 type SetupInfo struct {
-	InitialDirectory      string
-	GurobiGoDirectory     string
-	LatestGurobiGoVersion GurobiGoVersionInfo
-}
-
-type GurobiGoVersionInfo struct {
-	MajorVersionNumber    int
-	MinorVersionNumber    int
-	TertiaryVersionNumber int
-	TimeString            int
-	Hash                  string
+	InitialDirectory  string
+	GurobiGoDirectory string
 }
 
 // Functions
@@ -44,15 +38,8 @@ func GetDefaultSetupInfo() (SetupInfo, error) {
 	}
 
 	sf0 := SetupInfo{
-		InitialDirectory:  "~/go/pkg/mod/github.com/kwesi\\!rutledge/",
+		InitialDirectory:  fmt.Sprintf("%v/go/pkg/mod/github.com/kwesi!rutledge/", homeDir),
 		GurobiGoDirectory: fmt.Sprintf("%v/go/pkg/mod/github.com/kwesi!rutledge/", homeDir),
-		LatestGurobiGoVersion: GurobiGoVersionInfo{
-			MajorVersionNumber:    0,
-			MinorVersionNumber:    0,
-			TertiaryVersionNumber: 0,
-			TimeString:            20220110234629,
-			Hash:                  "2556814a1f69",
-		},
 	}
 
 	// Get current working directory
@@ -63,23 +50,8 @@ func GetDefaultSetupInfo() (SetupInfo, error) {
 	sf0.InitialDirectory = tempPwd
 	log.Printf("The current directory is \"%v\"", tempPwd)
 
-	// Search through the pkg Library for all instances of gurobi.go
-	libraryContents, err := os.ReadDir(sf0.GurobiGoDirectory)
-	if err != nil {
-		return sf0, err
-	}
-	gurobiGoDirectories := []string{}
-	for _, content := range libraryContents {
-		if content.IsDir() && strings.Contains(content.Name(), "gurobi.go") {
-			fmt.Println(content.Name())
-			gurobiGoDirectories = append(gurobiGoDirectories, content.Name())
-		}
-	}
-
 	return sf0, nil
-
-	// Convert Directories into Gurobi Version Info
-	// gurobiVersionList, err := StringsToGurobiVersionInfoList(gurobiDirectories)
+	// gurobiVersionList, err := StringsToGurobiGoVersionInfoList(gurobiDirectories)
 	// if err != nil {
 	// 	return mlf, err
 	// }
@@ -97,26 +69,91 @@ func GetDefaultSetupInfo() (SetupInfo, error) {
 }
 
 /*
-ToVersionName
+SafeGetGurobiGo
 Description:
-	Converts the GurobiGoVersionInfo object into the single string which is used to contain the gurobi.go installation.
+	Run the safe go get which is necessary for this library which uses cgo.
 */
-func (infoIn GurobiGoVersionInfo) ToVersionName() string {
-	return fmt.Sprintf(
-		"v%v.%v.%v-%v-%v",
-		infoIn.MajorVersionNumber,
-		infoIn.MinorVersionNumber,
-		infoIn.TertiaryVersionNumber,
-		infoIn.TimeString,
-		infoIn.Hash,
-	)
+func SafeGetGurobiGo() error {
+	err := exec.Command("go", "get", "-d", "github.com/kwesiRutledge/gurobi.go/gurobi").Run()
+	if err != nil {
+		return fmt.Errorf("There was an issue running go get: %v", err)
+	}
+
+	// Return nil
+	return nil
+
 }
 
 /*
-SetupLogs
+SetupMostRecentGurobigo
 Description:
-	Sets up the logging file and the connection of log to the terminal.
+	Runs the gen.go file from the directory where the most recent gurobi.go version has been installed.
 */
+func SetupMostRecentGurobigo(siIn *SetupInfo) error {
+
+	// Search through the pkg Library for all instances of gurobi.go
+	libraryContents, err := os.ReadDir(siIn.GurobiGoDirectory)
+	if err != nil {
+		return err
+	}
+	gurobiGoDirectories := []string{}
+	for _, content := range libraryContents {
+		if content.IsDir() && strings.Contains(content.Name(), "gurobi.go") {
+			fmt.Println(content.Name())
+			gurobiGoDirectories = append(gurobiGoDirectories, content.Name())
+		}
+	}
+
+	if len(gurobiGoDirectories) == 0 {
+		return fmt.Errorf("No gurobi.go directories were found at the specified directory: %v", siIn.GurobiGoDirectory)
+	}
+
+	log.Printf("Identified %v versions of gurobi.go.\n", len(gurobiGoDirectories))
+
+	// Convert Directories into gurobi.go Version Info
+	gurobiGoVersionList := []*versionTool.Version{}
+	for _, directoryName := range gurobiGoDirectories {
+		tempVersionPointer, err := versionTool.NewVersion(directoryName[len("gurobi.go@v"):])
+		if err != nil {
+			if err != nil {
+				return err
+			}
+		}
+		gurobiGoVersionList = append(gurobiGoVersionList, tempVersionPointer)
+	}
+
+	// fmt.Println(gurobiGoVersionList)
+	// fmt.Println(gurobiGoVersionList[0].GreaterThan(gurobiGoVersionList[3]))
+
+	// Get highest version
+	highestVersionIndex := 0
+	for versionIndex, tempVersion := range gurobiGoVersionList {
+		if tempVersion.GreaterThan(gurobiGoVersionList[highestVersionIndex]) {
+			highestVersionIndex = versionIndex
+		}
+	}
+
+	log.Printf("Highest Version: %v\n", gurobiGoVersionList[highestVersionIndex])
+
+	// Change directory to the one with the highest version
+	targetDirectory := fmt.Sprintf("%v%v", siIn.GurobiGoDirectory, gurobiGoDirectories[highestVersionIndex])
+	err = os.Chdir(targetDirectory)
+	if err != nil {
+		return fmt.Errorf("There was an issue changing the directory: %v", err)
+	}
+	defer os.Chdir(siIn.InitialDirectory) // Change directory back to the original one
+
+	// Run gen.go
+	err = exec.Command("go", "generate").Run()
+	if err != nil {
+		return fmt.Errorf("There was an issue running \"go generate\" in the new directory (was sudo used?): %v", err)
+	}
+
+	log.Printf("Completed the running of go generate from %v.", targetDirectory)
+
+	// If all Searches have passed, then return no errors.
+	return nil
+}
 
 /*
 SetUpLog
@@ -159,10 +196,32 @@ func SetUpLog() error {
 }
 
 func main() {
-	_, err := GetDefaultSetupInfo()
+
+	// Setup Log
+	err := SetUpLog()
+	if err != nil {
+		fmt.Printf("There was an issue setting up the log file: %v", err)
+	}
+
+	SetupInfo, err := GetDefaultSetupInfo()
 	if err != nil {
 		log.Printf("There was an error collecting default setup info: %v", err)
 	}
+
+	// Call go get for gurobi.go
+	err = SafeGetGurobiGo()
+	if err != nil {
+		log.Printf("There was an issue running SafeGetGurobiGo(): %v", err)
+		os.Exit(1)
+	}
+
+	// Setup the most recently installed gurobi.go
+	err = SetupMostRecentGurobigo(&SetupInfo)
+	if err != nil {
+		log.Printf("There was an issue running SetupMostREcentGurobigo: %v", err)
+	}
+
+	fmt.Println(SetupInfo)
 
 	// Next, parse the arguments to make_lib and assign values to the mlf appropriately
 	//sf, err = ParseMakeLibArguments(sf)
