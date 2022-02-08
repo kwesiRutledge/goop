@@ -13,10 +13,10 @@ import (
 // Type Definition
 
 type GurobiSolver struct {
-	Env          *gurobi.Env
-	CurrentModel *gurobi.Model
-	ModelName    string
-	GoopToGurobiMap map[uint64]int32 // Maps each Goop ID (uint64) to the idx value used for each Gurobi variable.
+	Env                    *gurobi.Env
+	CurrentModel           *gurobi.Model
+	ModelName              string
+	GoopIDToGurobiIndexMap map[uint64]int32 // Maps each Goop ID (uint64) to the idx value used for each Gurobi variable.
 }
 
 // Function
@@ -141,7 +141,7 @@ func (gs *GurobiSolver) CreateModel(modelName string) {
 	gs.CurrentModel = model
 
 	// Create an empty map
-	gs.GoopToGurobiMap = make(map[uint64]int32)
+	gs.GoopIDToGurobiIndexMap = make(map[uint64]int32)
 
 }
 
@@ -187,7 +187,12 @@ func (gs *GurobiSolver) AddVar(varIn *goop.Var) error {
 		return fmt.Errorf("There was an error defining gurobi type: %v", err)
 	}
 
+	// Add Variable to Current Model
 	_, err = gs.CurrentModel.AddVar(int8(vType), 0.0, varIn.Lower, varIn.Upper, fmt.Sprintf("x%v", varIn.ID), []*gurobi.Constr{}, []float64{})
+
+	// Update Map from GoopID to Gurobi Idx
+	gs.GoopIDToGurobiIndexMap[varIn.ID] = len(gs.CurrentModel.Variables)
+
 	return err
 }
 
@@ -221,23 +226,24 @@ func (gs *GurobiSolver) AddConstr(constrIn *goop.Constr) error {
 	// Constants
 
 	// Identify the variables in the left hand side of this constraint
+	var tempVarSlice []*gurobi.Var
 	for _, tempGoopID := range constrIn.lhs.Vars() {
-		tempGurobiIdx := 
-		
+		tempGurobiIdx := gs.GoopIDToGurobiIndexMap[tempGoopID]
+
 		// Locate the gurobi variable in the current model that has matching ID
-		
+		for _, tempGurobiVar := range gs.CurrentModel.Variables {
+			if tempGurobiIdx == tempGurobiVar.Index {
+				tempVarSlice = append(tempVarSlice, &tempGurobiVar)
+			}
+		}
 	}
 
 	// Call Gurobi library's AddConstr() function
 	gs.CurrentModel.AddConstr(
-		constrIn.lhs,
-		getCoeffsPtr(constr.lhs),
-		getVarsPtr(constr.lhs),
-		constr.lhs.Constant(),
-		constr.rhs.NumVars(),
-		getCoeffsPtr(constr.rhs),
-		getVarsPtr(constr.rhs),
-		constr.rhs.Constant(),
-		byte(constr.sense),
+		tempVarSlice,
+		constrIn.lhs.Coeffs(),
+		constrIn.sense,
+		constrIn.rhs.Constant(),
+		fmt.Sprintf("goop Constraint #%v", len(gs.CurrentModel.Constraints)),
 	)
 }

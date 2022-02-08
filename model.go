@@ -126,17 +126,7 @@ func (m *Model) Optimize(solver Solver) (*Solution, error) {
 	solver.AddVars(m.vars)
 
 	for _, constr := range m.constrs {
-		solver.AddConstr(
-			constr.lhs.NumVars(),
-			getCoeffsPtr(constr.lhs),
-			getVarsPtr(constr.lhs),
-			constr.lhs.Constant(),
-			constr.rhs.NumVars(),
-			getCoeffsPtr(constr.rhs),
-			getVarsPtr(constr.rhs),
-			constr.rhs.Constant(),
-			byte(constr.sense),
-		)
+		solver.AddConstr(constr)
 	}
 
 	if m.obj != nil {

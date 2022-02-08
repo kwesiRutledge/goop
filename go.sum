@@ -11,6 +11,8 @@ github.com/kwesiRutledge/gurobi.go v0.0.0-20220110234629-2556814a1f69 h1:eQPE3G9
 github.com/kwesiRutledge/gurobi.go v0.0.0-20220110234629-2556814a1f69/go.mod h1:PLagszho/FEue9tgsz3F4iCYiMnQkOs8LHcdl4btj4c=
 github.com/kwesiRutledge/gurobi.go v0.0.0-20220123014810-107e74abb158 h1:qjZddXPWI01uSMmDKUNvh4oHRU68t9bPf/6L03HOSwA=
 github.com/kwesiRutledge/gurobi.go v0.0.0-20220123014810-107e74abb158/go.mod h1:PLagszho/FEue9tgsz3F4iCYiMnQkOs8LHcdl4btj4c=
+github.com/kwesiRutledge/gurobi.go v0.0.0-20220204043557-b3561a135ac0 h1:cGiJgjLPMCzvYS58biJJweI/yb57pFmejlnIIqtV2Ag=
+github.com/kwesiRutledge/gurobi.go v0.0.0-20220204043557-b3561a135ac0/go.mod h1:PLagszho/FEue9tgsz3F4iCYiMnQkOs8LHcdl4btj4c=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=

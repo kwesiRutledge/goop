@@ -4,9 +4,9 @@ package goop
 // x == y. Constr uses a left and right hand side expressions along with a
 // constraint sense (<=, >=, ==) to represent a generalized linear constraint
 type Constr struct {
-	lhs   Expr
-	rhs   Expr
-	sense ConstrSense
+	LeftHandSide  Expr
+	RightHandSide Expr
+	Sense         ConstrSense
 }
 
 // LessEq returns a constraint representing lhs <= rhs

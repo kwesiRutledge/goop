@@ -80,3 +80,37 @@ func TestGurobiSolver_SetTimeLimit1(t *testing.T) {
 		t.Errorf("The time limit returned from gurobi is %v; expected %v", timeLimitOut, newTimeLimit)
 	}
 }
+
+/*
+TestGurobiSolver_AddVar1
+Description:
+	Verifies that we can properly change the time limit when commanding.
+*/
+func TestGurobiSolver_AddVar1(t *testing.T) {
+	// Constants
+	gs1 := NewGurobiSolver()
+	modelName1 := "Anniversary1"
+
+	newTimeLimit := 1.4
+
+	// Create Model
+	gs1.CreateModel(modelName1)
+	if gs1.CurrentModel == nil {
+		t.Errorf("The model was not successfully created!")
+	}
+	defer gs1.Free()
+	defer os.Remove(modelName1 + ".log")
+
+	// Set new timelimit
+	gs1.SetTimeLimit(newTimeLimit)
+
+	// Check timelimit
+	timeLimitOut, err := gs1.GetTimeLimit()
+	if err != nil {
+		t.Errorf("There was an issue getting the time limit variable: %v", err)
+	}
+
+	if timeLimitOut != newTimeLimit {
+		t.Errorf("The time limit returned from gurobi is %v; expected %v", timeLimitOut, newTimeLimit)
+	}
+}
