@@ -104,6 +104,10 @@ func (m *Model) SetObjective(e Expr, sense ObjSense) {
 // Optimize optimizes the model using the given solver type and returns the
 // solution or an error.
 func (m *Model) Optimize(solver Solver) (*Solution, error) {
+	// Variables
+	var err error
+
+	// Input Processing
 	if len(m.vars) == 0 {
 		return nil, errors.New("no variables in model")
 	}
@@ -133,16 +137,13 @@ func (m *Model) Optimize(solver Solver) (*Solution, error) {
 		logrus.WithField(
 			"num_vars", m.obj.NumVars(),
 		).Info("Number of variables in objective")
-		solver.SetObjective(
-			m.obj.NumVars(),
-			getCoeffsPtr(m.obj),
-			getVarsPtr(m.obj),
-			m.obj.Constant(),
-			int(m.obj.sense),
-		)
+		err = solver.SetObjective(*m.obj)
+		if err != nil {
+			return nil, fmt.Errorf("There was an error setting the objective: %v", err)
+		}
 	}
 
-	mipSol := solver.Optimize()
+	mipSol, error := solver.Optimize()
 	defer solver.DeleteSolver()
 
 	if mipSol.GetErrorCode() != 0 {

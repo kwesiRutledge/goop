@@ -39,9 +39,9 @@ func (v *Var) Plus(e Expr) Expr {
 	vars := append([]uint64{v.ID}, e.Vars()...)
 	coeffs := append([]float64{1}, e.Coeffs()...)
 	newExpr := &LinearExpr{
-		vars:     vars,
-		coeffs:   coeffs,
-		constant: e.Constant(),
+		variables:    vars,
+		coefficients: coeffs,
+		constant:     e.Constant(),
 	}
 	return newExpr
 }
@@ -58,9 +58,9 @@ func (v *Var) Mult(m float64) Expr {
 
 	// Algorithm
 	newExpr := &LinearExpr{
-		vars:     vars,
-		coeffs:   coeffs,
-		constant: 0,
+		variables:    vars,
+		coefficients: coeffs,
+		constant:     0,
 	}
 	return newExpr
 	// case *Var:

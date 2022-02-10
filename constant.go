@@ -42,8 +42,8 @@ func (c K) Plus(e Expr) Expr {
 		return K(c.Constant() + e.Constant())
 	default:
 		newExpr := new(LinearExpr)
-		newExpr.vars = append([]uint64{}, e.Vars()...)
-		newExpr.coeffs = append([]float64{}, e.Coeffs()...)
+		newExpr.variables = append([]uint64{}, e.Vars()...)
+		newExpr.coefficients = append([]float64{}, e.Coeffs()...)
 		newExpr.constant = e.Constant() + c.Constant()
 		return newExpr
 	}

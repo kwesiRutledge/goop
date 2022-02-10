@@ -12,7 +12,7 @@ type Solver interface {
 	AddVar(varIn *Var) error
 	AddVars(varSlice []*Var) error
 	AddConstr(constrIn *Constr) error
-	SetObjective(expressionIn Expr) error
-	Optimize() error
+	SetObjective(objectiveIn Objective) error
+	Optimize() (Solution, error)
 	DeleteSolver() error
 }

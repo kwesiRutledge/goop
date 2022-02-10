@@ -246,4 +246,24 @@ func (gs *GurobiSolver) AddConstr(constrIn *goop.Constr) error {
 		constrIn.rhs.Constant(),
 		fmt.Sprintf("goop Constraint #%v", len(gs.CurrentModel.Constraints)),
 	)
+
+	// Create no errors if there were no errors!
+	return nil
+}
+
+/*
+SetObjective
+Description:
+	This algorithm should set the objective based on the value of the expression provided as input to this function.
+*/
+func (gs *GurobiSolver) SetObjective(expressionIn Expr) error {
+
+	// Handle this differently for different types of expression inputs
+	switch expressionIn.(type) {
+	case LinearExpr:
+		fmt.Printf()
+
+	default:
+		return fmt.Errorf("Unexpected objective type given to SetObjective(): %T", expressionIn)
+	}
 }
