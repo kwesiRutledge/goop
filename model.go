@@ -143,18 +143,20 @@ func (m *Model) Optimize(solver Solver) (*Solution, error) {
 		}
 	}
 
-	mipSol, error := solver.Optimize()
+	mipSol, err := solver.Optimize()
 	defer solver.DeleteSolver()
 
-	if mipSol.GetErrorCode() != 0 {
-		msg := fmt.Sprintf(
+	if mipSol.Status != OptimizationStatus_OPTIMAL {
+		errorMessage, err := mipSol.Status.ToMessage()
+		if err != nil {
+			return nil, fmt.Errorf("There was an issue converting optimization status to a message: %v", err)
+		}
+		return nil, fmt.Errorf(
 			"[Code = %d] %s",
-			mipSol.GetErrorCode(),
-			mipSol.GetErrorMessage(),
+			mipSol.Status,
+			errorMessage,
 		)
-		return nil, errors.New(msg)
 	}
 
-	sol := newSolution(mipSol)
-	return sol, nil
+	return &mipSol, nil
 }

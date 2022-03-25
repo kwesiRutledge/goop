@@ -4,7 +4,7 @@ package goop
 // objective sense (maximize or minimize).
 type Objective struct {
 	Expr
-	sense ObjSense
+	Sense ObjSense
 }
 
 // NewObjective returns a new optimization objective given an expression and

@@ -44,7 +44,7 @@ ShowLog
 Description:
 	Decides whether or not to print logs to the terminal?
 */
-func (gs *GurobiSolver) ShowLog(tf bool) {
+func (gs *GurobiSolver) ShowLog(tf bool) error {
 	// Constants
 	logFileName := gs.ModelName + ".txt"
 
@@ -56,7 +56,7 @@ func (gs *GurobiSolver) ShowLog(tf bool) {
 		//Delete the old file.
 		err = os.Remove(logFileName)
 		if err != nil {
-			panic(err.Error())
+			return fmt.Errorf("There was an issue deleting the old log file: %v", err)
 		}
 	}
 
@@ -64,7 +64,7 @@ func (gs *GurobiSolver) ShowLog(tf bool) {
 	file, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		// log.Fatal(err)
-		panic(err.Error())
+		return fmt.Errorf("There was an issue createing a log file: %v", err)
 	}
 
 	// Attach logger to terminal only if tf is true
@@ -76,6 +76,8 @@ func (gs *GurobiSolver) ShowLog(tf bool) {
 
 	// Create initial file
 	log.Println("Log file created.")
+
+	return nil
 
 }
 
@@ -190,8 +192,10 @@ func (gs *GurobiSolver) AddVar(varIn *goop.Var) error {
 	// Add Variable to Current Model
 	_, err = gs.CurrentModel.AddVar(int8(vType), 0.0, varIn.Lower, varIn.Upper, fmt.Sprintf("x%v", varIn.ID), []*gurobi.Constr{}, []float64{})
 
+	fmt.Printf("%v: L=%v, U=%v, name=%v\n", int8(vType), varIn.Lower, varIn.Upper, fmt.Sprintf("x%v", varIn.ID))
+
 	// Update Map from GoopID to Gurobi Idx
-	gs.GoopIDToGurobiIndexMap[varIn.ID] = len(gs.CurrentModel.Variables)
+	gs.GoopIDToGurobiIndexMap[varIn.ID] = int32(len(gs.CurrentModel.Variables) - 1)
 
 	return err
 }
@@ -206,10 +210,10 @@ func (gs *GurobiSolver) AddVars(varSliceIn []*goop.Var) error {
 
 	// Iterate through ALL variable address in varSliceIn
 	for _, varPointer := range varSliceIn {
-		err := AddVar(varPointer)
+		err := gs.AddVar(varPointer)
 		if err != nil {
 			// Terminate early.
-			return fmt.Errorf("Error in AddVars(): %v", err)
+			return fmt.Errorf("Error in AddVar(): %v", err)
 		}
 	}
 
@@ -227,7 +231,7 @@ func (gs *GurobiSolver) AddConstr(constrIn *goop.Constr) error {
 
 	// Identify the variables in the left hand side of this constraint
 	var tempVarSlice []*gurobi.Var
-	for _, tempGoopID := range constrIn.lhs.Vars() {
+	for _, tempGoopID := range constrIn.LeftHandSide.Vars() {
 		tempGurobiIdx := gs.GoopIDToGurobiIndexMap[tempGoopID]
 
 		// Locate the gurobi variable in the current model that has matching ID
@@ -239,13 +243,16 @@ func (gs *GurobiSolver) AddConstr(constrIn *goop.Constr) error {
 	}
 
 	// Call Gurobi library's AddConstr() function
-	gs.CurrentModel.AddConstr(
+	_, err := gs.CurrentModel.AddConstr(
 		tempVarSlice,
-		constrIn.lhs.Coeffs(),
-		constrIn.sense,
-		constrIn.rhs.Constant(),
+		constrIn.LeftHandSide.Coeffs(),
+		int8(constrIn.Sense),
+		constrIn.RightHandSide.Constant(),
 		fmt.Sprintf("goop Constraint #%v", len(gs.CurrentModel.Constraints)),
 	)
+	if err != nil {
+		return fmt.Errorf("There was an issue with adding the constraint to the gurobi model: %v", err)
+	}
 
 	// Create no errors if there were no errors!
 	return nil
@@ -256,14 +263,107 @@ SetObjective
 Description:
 	This algorithm should set the objective based on the value of the expression provided as input to this function.
 */
-func (gs *GurobiSolver) SetObjective(expressionIn Expr) error {
+func (gs *GurobiSolver) SetObjective(objIn goop.Objective) error {
+
+	objExpression := objIn.Expr
 
 	// Handle this differently for different types of expression inputs
-	switch expressionIn.(type) {
-	case LinearExpr:
-		fmt.Printf()
+	switch objExpression.(type) {
+	case *goop.LinearExpr:
+		gurobiLE := &gurobi.LinExpr{}
+		for varIndex, goopIndex := range objExpression.Vars() {
+			gurobiIndex := gs.GoopIDToGurobiIndexMap[goopIndex]
+
+			// Add each linear term to the expression.
+			tempGurobiVar := gurobi.Var{
+				Model: gs.CurrentModel,
+				Index: gurobiIndex,
+			}
+			gurobiLE = gurobiLE.AddTerm(&tempGurobiVar, objExpression.Coeffs()[varIndex])
+		}
+
+		// Add a constant term to the expression
+		gurobiLE = gurobiLE.AddConstant(objExpression.Constant())
+
+		fmt.Println(gurobiLE)
+
+		// Add linear expression to the objective.
+		err := gs.CurrentModel.SetLinearObjective(gurobiLE, int32(objIn.Sense))
+		if err != nil {
+			return fmt.Errorf("There was an issue setting the linear objective with SetLinearObjective(): %v", err)
+		}
+
+		return nil
 
 	default:
-		return fmt.Errorf("Unexpected objective type given to SetObjective(): %T", expressionIn)
+		return fmt.Errorf("Unexpected objective type given to SetObjective(): %T", objExpression)
 	}
+}
+
+/*
+Optimize
+Description:
+*/
+func (gs *GurobiSolver) Optimize() (goop.Solution, error) {
+	// Make sure that all changes are applied to the given model.
+	err := gs.CurrentModel.Update()
+	if err != nil {
+		return goop.Solution{}, fmt.Errorf("There was an issue updating the current gurobi model: %v", err)
+	}
+
+	// Optimize
+	err = gs.CurrentModel.Optimize()
+	if err != nil {
+		return goop.Solution{}, fmt.Errorf("There was an issue optimizing the current model: %v", err)
+	}
+
+	// Construct solution:
+	// - Status
+	tempSolution := goop.Solution{}
+	tempStatus, err := gs.CurrentModel.GetIntAttr("Status")
+	if err != nil {
+		return tempSolution, fmt.Errorf("There was an issue collecting the model's status: %v", err)
+	}
+	tempSolution.Status = goop.OptimizationStatus(tempStatus)
+
+	// - Values
+	tempValues := make(map[uint64]float64)
+	for _, tempGurobiVar := range gs.CurrentModel.Variables {
+		val, err := tempGurobiVar.GetDouble("X")
+		if err != nil {
+			return tempSolution, fmt.Errorf("Error while retrieving the optimal values of the problem: %v", err)
+		}
+		// identify goop index that has this gurobi variables data
+		for goopIndex, gurobiIndex := range gs.GoopIDToGurobiIndexMap {
+			if gurobiIndex == tempGurobiVar.Index {
+				tempValues[goopIndex] = val
+				break // When you find it, save the value and return the value to the map.
+			}
+		}
+	}
+	tempSolution.Values = tempValues
+
+	// - Objective
+	tempObjective, err := gs.CurrentModel.GetDoubleAttr("ObjVal")
+	if err != nil {
+		return tempSolution, fmt.Errorf("There was an issue getting the objective value of the current model.")
+	}
+	tempSolution.Objective = tempObjective
+
+	// All steps were successful, return solution!
+	return tempSolution, nil
+}
+
+/*
+DeleteSolver
+Description:
+	Attempts to delete all info about the current solver.
+*/
+func (gs *GurobiSolver) DeleteSolver() error {
+	// Free model and environment
+	gs.CurrentModel.Free()
+
+	gs.Env.Free()
+
+	return nil
 }

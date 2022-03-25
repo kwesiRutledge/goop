@@ -7,7 +7,7 @@ Description:
 */
 
 type Solver interface {
-	ShowLog(tf bool)
+	ShowLog(tf bool) error
 	SetTimeLimit(timeLimit float64) error
 	AddVar(varIn *Var) error
 	AddVars(varSlice []*Var) error
