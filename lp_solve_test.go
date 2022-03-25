@@ -8,10 +8,10 @@ import (
 
 func TestLPSolve(t *testing.T) {
 	t.Run("SimpleMIP", func(t *testing.T) {
-		solveSimpleMIPModel(t, solvers.NewLPSolveSolver())
+		solveSimpleMIPModel(t, solvers.NewGurobiSolver())
 	})
 
 	t.Run("SumRowsCols", func(t *testing.T) {
-		solveSumRowsColsModel(t, solvers.NewLPSolveSolver())
+		solveSumRowsColsModel(t, solvers.NewGurobiSolver())
 	})
 }

@@ -5,10 +5,9 @@ import (
 	"testing"
 
 	"github.com/kwesiRutledge/goop"
-	"github.com/kwesiRutledge/goop/solvers"
 )
 
-func solveSimpleMIPModel(t *testing.T, solver solvers.Solver) {
+func solveSimpleMIPModel(t *testing.T, solver goop.Solver) {
 	m := goop.NewModel()
 	m.ShowLog(false)
 	x := m.AddBinaryVar()
@@ -31,7 +30,7 @@ func solveSimpleMIPModel(t *testing.T, solver solvers.Solver) {
 	t.Log("z =", sol.Value(z))
 }
 
-func solveSumRowsColsModel(t *testing.T, solver solvers.Solver) {
+func solveSumRowsColsModel(t *testing.T, solver goop.Solver) {
 	m := goop.NewModel()
 	m.ShowLog(false)
 	rows := 4
